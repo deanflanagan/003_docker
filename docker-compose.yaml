@@ -13,6 +13,7 @@ services:
       context: .
       dockerfile: .Dockerfile.backend
     command: bash -c "python manage.py migrate ; python manage.py migrate --run-syncdb; python manage.py runserver 0.0.0.0:8000"
+    image: backend
     volumes:
       - ./backend:/app
     ports:
@@ -27,6 +28,7 @@ services:
       context: .
       dockerfile: .Dockerfile.frontend
     command: npm start
+    image: frontend
     volumes:
       - ./frontend:/app
     ports:
@@ -49,7 +51,8 @@ services:
     depends_on:
       - redis
       - backend
-
+      - frontend
+      - db
 
 volumes:
   db-data: {}
