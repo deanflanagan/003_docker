@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  backend:
+    build: 
+      context: .
+      dockerfile: .Dockerfile.backend
+    command: bash -c "python manage.py migrate ; python manage.py migrate --run-syncdb; python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DJANGO_SETTINGS_MODULE=backend.settings
+
+  frontend:
+    build: 
+      context: .
+      dockerfile: .Dockerfile.frontend
+    command: npm start
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+  
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+    depends_on:
+      - frontend
+
+  celery:
+    build: 
+      context: .
+      dockerfile: .Dockerfile.backend
+    command: celery -A backend worker -l info
+    depends_on:
+      - redis
+      - backend
+
+
+volumes:
+  db-data: {}
