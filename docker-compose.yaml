@@ -27,10 +27,7 @@ services:
     build: 
       context: .
       dockerfile: .Dockerfile.frontend
-    command: npm start
     image: frontend
-    volumes:
-      - ./frontend:/app
     ports:
       - "3000:3000"
     depends_on:

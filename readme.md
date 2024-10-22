@@ -7,6 +7,7 @@ Following the last project where we set up our fullstack app to use async worker
 - [How it works](#how-it-works)
     - [Prerequisites](#prerequisites)
     - [Docker](#docker)
+    - [Repository](#repository)
 - [Security](#security)
 - [Resources](#resources)
 
@@ -34,6 +35,48 @@ A few handy common ones:
 - `docker logs <container-name>` is very helpful for looking at individual logs
 - `docker network inspect <network-name>` and `docker network ls` show you how the network is set up
 - `docker volume` and the additional flags `prune` with `--all` will help clean up your system. During development they can take a lot of space. Same for images
+
+<span style="color: red;">**NOTE:** </span> The react/frontend app is not correctly built here. We should really run a two-stage build where we build with a node image, and then serve with nginx or some lightweight server with some configuration (included as `./nginx.conf`). While the following excerpt does that, the styling was all missing. But know that is the correct way to do this:
+```
+FROM node:22-slim AS build
+
+WORKDIR /app
+
+COPY ./frontend/package.json ./frontend/package-lock.json ./
+RUN npm install
+
+COPY ./frontend ./
+RUN npm run build
+
+FROM nginx:alpine
+
+COPY --from=build /app/build /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/nginx.conf
+
+RUN rm /etc/nginx/conf.d/default.conf
+
+RUN chown -R nginx:nginx /usr/share/nginx/html
+RUN chown -R nginx:nginx /var/cache/nginx
+
+EXPOSE 3000
+
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+## Repository
+
+In order to save oneself from having to build and rebuild these images on all systems, you can store them in a Docker repository. To use this, sign up to docker. Then you can login and push both the frontend and backend images to this repo:
+
+```
+docker login -u <your-username>
+docker tag frontend:latest <your-username>/math-app-frontend:latest
+docker push <your-username>/math-app-frontend:latest
+
+docker tag backend:latest <your-username>/math-app-backend:latest
+docker push <your-username>/math-app-backend:latest
+```
+
+Note these are publicly available. You can make one of these private for free but after that, well that's how they get ya isn't it?
 
 # Security
 While not all security measure have been taken here, a few of the most important concepts are:
